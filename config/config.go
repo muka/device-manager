@@ -1,43 +1,58 @@
 package config
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/muka/device-manager/util"
 
 	"gopkg.in/yaml.v2"
 )
 
-// T the parsed configuration object
-type T struct {
+const defaultPath string = "./config.yml"
+
+// Config the parsed configuration object
+type Config struct {
 	APISpecPath string
 }
 
+var cfg *Config
+
+func init() {
+}
+
+// Get returns the configuration struct
+func Get() Config {
+	if cfg == nil {
+		Load(defaultPath)
+	}
+	return *cfg
+}
+
 // Load an yaml config file
-func Load(path string) (t T, err error) {
+func Load(path string) error {
+
+	log.Printf("Load file %s", path)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Fatalf("File not found (%v)", err)
+		return err
+	}
 
 	data, err := util.FromFile(path)
 	if err != nil {
 		log.Fatalf("error: %v", err)
-		return
+		return err
 	}
 
-	err = yaml.Unmarshal([]byte(data), &t)
+	cfg = new(Config)
+	err = yaml.Unmarshal([]byte(data), cfg)
 	if err != nil {
 		log.Fatalf("error: %v", err)
-		return
+		return err
 	}
 
-	fmt.Printf("--- t:\n%v\n\n", t)
+	log.Printf("--- Loaded configuration:\n%v\n\n", cfg)
 
-	d, err := yaml.Marshal(&t)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-		return
-	}
-
-	fmt.Printf("--- t dump:\n%s\n\n", string(d))
-
-	return t, nil
+	return nil
 }
