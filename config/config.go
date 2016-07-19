@@ -1,9 +1,9 @@
 package config
 
 import (
-	"log"
 	"os"
 
+	"github.com/muka/device-manager/fetch"
 	"github.com/muka/device-manager/util"
 
 	"gopkg.in/yaml.v2"
@@ -13,7 +13,7 @@ const defaultPath string = "./config.yml"
 
 // Config the parsed configuration object
 type Config struct {
-	APISpecPath string
+	APISpecPath string `yaml:"XMLSpecPath"`
 }
 
 var cfg *Config
@@ -32,27 +32,29 @@ func Get() Config {
 // Load an yaml config file
 func Load(path string) error {
 
-	log.Printf("Load file %s", path)
+	logger := util.Logger()
+
+	logger.Println("Load configuration")
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatalf("File not found (%v)", err)
+		logger.Fatalf("File not found (%v)", err)
 		return err
 	}
 
-	data, err := util.FromFile(path)
+	data, err := fetch.GetContent(path)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		logger.Fatalf("error: %v", err)
 		return err
 	}
 
 	cfg = new(Config)
 	err = yaml.Unmarshal([]byte(data), cfg)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		logger.Fatalf("error: %v", err)
 		return err
 	}
 
-	log.Printf("--- Loaded configuration:\n%v\n\n", cfg)
+	logger.Printf("Configuration loaded")
 
 	return nil
 }
