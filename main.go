@@ -17,7 +17,7 @@ func main() {
 	daemon := dbus.Daemon{
 		Path:   "/iot/agile/DeviceManager",
 		Iface:  "iot.agile.DeviceManager",
-		Object: objects.DeviceManager,
+		Object: &objects.DeviceManager{},
 	}
 
 	daemon.Start()

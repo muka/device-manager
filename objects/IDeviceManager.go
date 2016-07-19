@@ -29,17 +29,8 @@ type DeviceDefinition struct {
 
 // IDeviceManager manages devices in the gateway
 type IDeviceManager interface {
-	Find(BaseQuery) []IDevice
-	Create(dev DeviceDefinition) string
-	Read(id string) DeviceDefinition
-	Update(id string, dev DeviceDefinition) bool
-	Delete(id string) bool
-	Batch(operation string, ops map[string]string) bool
-}
-
-// DeviceManager manages devices in the gateway
-type DeviceManager interface {
-	Find(BaseQuery) []IDevice
+	IProxy
+	Find(BaseQuery) []Device
 	Create(dev DeviceDefinition) string
 	Read(id string) DeviceDefinition
 	Update(id string, dev DeviceDefinition) bool

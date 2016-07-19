@@ -3,6 +3,7 @@ package dbus
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/muka/device-manager/config"
 	"github.com/muka/device-manager/fetch"
@@ -15,6 +16,11 @@ import (
 
 var logger = util.Logger()
 
+const (
+	appendString = "<!-- @EndOfNode -->"
+	appendReg    = `\<\!\-\- \@EndOfNode \-\-\>`
+)
+
 func check(err error) {
 	if err != nil {
 		logger.Fatal(err)
@@ -24,15 +30,16 @@ func check(err error) {
 
 // Daemon provide deamon instance informations
 type Daemon struct {
-	Path    dbus.ObjectPath
+	Path    string
 	Iface   string
-	Object  objects.Proxy
+	Object  objects.IProxy
 	XMLPath string
 	XML     string
+	conn    *dbus.Conn
 }
 
-// PrepareXML format the XML to be passed to dbus
-func (d Daemon) PrepareXML() {
+// LoadXML format the XML to be passed to dbus
+func (d *Daemon) LoadXML() {
 
 	xml, err := fetch.GetContent(d.XMLPath)
 	check(err)
@@ -40,18 +47,56 @@ func (d Daemon) PrepareXML() {
 	reg := regexp.MustCompile(`(?s).*<node`)
 	xml = reg.ReplaceAllString(xml, "<node")
 
+	// add append reference
 	reg = regexp.MustCompile(`(<\/node>)`)
-	xml = reg.ReplaceAllString(xml,
-		introspect.IntrospectDataString+"</node>")
-
-	logger.Printf("DBus XML:\n\n %s \n\n", xml)
+	xml = reg.ReplaceAllString(xml, appendString+"\n</node>")
 
 	d.XML = xml
 
+	// add Introspection string
+	d.appendToXMLNode(introspect.IntrospectDataString)
+
+	// exports the tree of introspectable
+	d.addIntrospectableChildren()
+}
+
+func (d *Daemon) appendToXMLNode(str string) {
+	reg := regexp.MustCompile(appendReg)
+	d.XML = reg.ReplaceAllString(d.XML, str+appendString)
+}
+
+func (d *Daemon) addIntrospectableChildren() {
+
+	parts := strings.Split(d.Path, "/")
+	partialPath := ""
+	xml := ""
+
+	partsLen := len(parts)
+	for i := 0; i < partsLen; i++ {
+
+		if i+1 == partsLen {
+			break
+		}
+
+		path := parts[i]
+		switch i {
+		case 0:
+			partialPath = "/"
+		case 1:
+			partialPath += path
+		default:
+			partialPath += "/" + path
+		}
+		xml += `<node name="` + partialPath + `" />`
+	}
+
+	if xml != "" {
+		d.appendToXMLNode(xml)
+	}
 }
 
 // Start start a new daemon
-func (d Daemon) Start() {
+func (d *Daemon) Start() {
 
 	config := config.Get()
 
@@ -60,11 +105,12 @@ func (d Daemon) Start() {
 	check(err)
 
 	d.XMLPath = absSpecPath + "/" + d.Iface + ".xml"
-
-	d.PrepareXML()
+	d.LoadXML()
 
 	conn, err := dbus.SessionBus()
 	check(err)
+
+	d.conn = conn
 
 	reply, err := conn.RequestName(d.Iface,
 		dbus.NameFlagDoNotQueue)
@@ -77,11 +123,18 @@ func (d Daemon) Start() {
 	}
 
 	obj := d.Object
+	objPath := dbus.ObjectPath(d.Path)
 
-	conn.Export(obj, d.Path, d.Iface)
+	logger.Printf("DBus XML:\n\n %s \n\n", d.XML)
+
+	err = obj.DBusSetup(conn)
+	check(err)
+
 	conn.Export(introspect.Introspectable(d.XML),
-		d.Path,
+		objPath,
 		"org.freedesktop.DBus.Introspectable")
+
+	conn.Export(obj, objPath, d.Iface)
 
 	fmt.Printf("Listening on %s %s ...", d.Iface, d.Path)
 
