@@ -8,7 +8,7 @@ import (
 // New creates a new ServiceManager instance
 func New() *ServiceManager {
 
-	logger, err := util.NewLogger("ServiceManager")
+	logger, err := util.NewLogger("service-manager")
 	util.CheckError(err)
 
 	return &ServiceManager{

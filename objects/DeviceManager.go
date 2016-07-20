@@ -29,8 +29,8 @@ func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) 
 	dev.Id = id
 	dev.Description = "My SensorTag device"
 	dev.Name = "SensorTag"
-	dev.Path = "/iot/agile/device/" + id
-	dev.Protocol = "/iot/agile/protocol/BLE"
+	dev.Path = dbus.ObjectPath("/iot/agile/device/Dummy")
+	dev.Protocol = dbus.ObjectPath("/iot/agile/protocol/BLE")
 	dev.Streams = make([]DeviceComponent, 2)
 
 	dev.Streams[0] = DeviceComponent{}
@@ -87,8 +87,8 @@ type DeviceDefinition struct {
 	Id          string
 	Name        string
 	Description string
-	Path        string
-	Protocol    string
+	Path        dbus.ObjectPath
+	Protocol    dbus.ObjectPath
 	Properties  map[string]string
 	Streams     []DeviceComponent
 }

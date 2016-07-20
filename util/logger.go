@@ -12,12 +12,9 @@ var logger *log.Logger
 // NewLogger return a new instance of a logger
 func NewLogger(name string) (*log.Logger, error) {
 
-	var buffer bytes.Buffer
-	buffer.WriteString("./")
-	buffer.WriteString(name)
-	buffer.WriteString(".log")
+	logName := "./" + name ".log"
 
-	file, err := os.OpenFile(buffer.String(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(logName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalln("Failed to open log file: %v", err)
 		return nil, err
