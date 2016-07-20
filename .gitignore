@@ -26,3 +26,5 @@ _testmain.go
 vendor
 debug
 tmp
+*.log
+device-manager

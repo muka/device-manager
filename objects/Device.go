@@ -1,6 +1,11 @@
 package objects
 
+import (
+	"log"
+)
+
 // Device a device implementation
 type Device struct {
-	IDevice
+	BaseObject
+	Logger *log.Logger
 }

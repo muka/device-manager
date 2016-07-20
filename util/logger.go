@@ -26,7 +26,7 @@ func NewLogger(name string) (*log.Logger, error) {
 	multi := io.MultiWriter(file, os.Stdout)
 
 	instance := log.New(multi,
-		"",
+		name+": ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	return instance, nil
