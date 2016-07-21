@@ -5,6 +5,12 @@ import (
 	"log"
 )
 
+// NewDeviceManager initialize a new DeviceManager object
+func NewDeviceManager() (d DeviceManager) {
+	d.Devices = []Device{}
+	return d
+}
+
 // DeviceManager manages devices in the gateway
 type DeviceManager struct {
 	BaseObject
@@ -12,8 +18,12 @@ type DeviceManager struct {
 }
 
 // Find search for devices
-func (d *DeviceManager) Find(BaseQuery) (devices []Device, err *dbus.Error) {
-	d.Devices = []Device{}
+func (d *DeviceManager) Find(q *BaseQuery) (devices []Device, err *dbus.Error) {
+
+	if &d.Devices == nil {
+		d.Devices = devices
+	}
+
 	return d.Devices, err
 }
 
@@ -23,7 +33,7 @@ func (d *DeviceManager) Create(dev DeviceDefinition) (path dbus.ObjectPath, err 
 	return path, err
 }
 
-// Read read a device definition
+// Read a device definition
 func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) {
 
 	dev.Id = id
