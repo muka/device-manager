@@ -46,7 +46,19 @@ func (d *DeviceManager) SetLogger(logger *log.Logger) {
 
 //GetProperties return properties
 func (d *DeviceManager) GetProperties() map[string]map[string]*prop.Prop {
-	return map[string]map[string]*prop.Prop{}
+	return map[string]map[string]*prop.Prop{
+		d.GetInterface(): {
+			"Devices": {
+				Value:    d.Devices,
+				Writable: false,
+				Emit:     prop.EmitTrue,
+				Callback: func(c *prop.Change) *dbus.Error {
+					d.logger.Printf("Changed value %s=%v on %s", c.Name, c.Value, c.Iface)
+					return nil
+				},
+			},
+		},
+	}
 }
 
 // Find search for devices
