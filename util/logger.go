@@ -11,7 +11,7 @@ var logger *log.Logger
 // NewLogger return a new instance of a logger
 func NewLogger(name string) (*log.Logger, error) {
 
-	logName := "./" + name + ".log"
+	logName := "./logs/" + name + ".log"
 
 	file, err := os.OpenFile(logName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {

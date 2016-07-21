@@ -28,3 +28,4 @@ debug
 tmp
 *.log
 device-manager
+logs

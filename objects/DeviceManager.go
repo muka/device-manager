@@ -1,16 +1,19 @@
 package objects
 
 import (
+	"log"
+
 	"github.com/godbus/dbus"
 	"github.com/godbus/dbus/prop"
 	"github.com/muka/device-manager/api"
-	"log"
 )
 
 // NewDeviceManager initialize a new DeviceManager object
 func NewDeviceManager() *DeviceManager {
 	d := DeviceManager{}
 	d.Devices = []dbus.ObjectPath{}
+	d.path = DeviceManagerPath
+	d.iface = DeviceManagerInterface
 	return &d
 }
 

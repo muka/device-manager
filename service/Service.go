@@ -15,10 +15,20 @@ import (
 // NewService instantiate a new service
 func NewService(p api.Proxy) *Service {
 
+	logger := util.Logger()
+
+	if p.GetPath() == "" {
+		panic("NewService(): Proxy path is empty")
+	}
+
+	if p.GetInterface() == "" {
+		panic("NewService(): Proxy interface is empty")
+	}
+
+	logger.Printf("Creating new service for %s : %s\n", p.GetPath(), p.GetInterface())
+
 	s := Service{}
-
 	s.SetObject(&p)
-
 	s.SetPath(p.GetPath())
 	s.SetInterface(p.GetInterface())
 
