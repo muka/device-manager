@@ -2,18 +2,20 @@ package main
 
 import (
 	"github.com/muka/device-manager/config"
-	"github.com/muka/device-manager/dbus"
+	"github.com/muka/device-manager/objects"
+	"github.com/muka/device-manager/service"
 	"github.com/muka/device-manager/util"
 )
 
-var logger = util.Logger()
+func init() {
+	util.Logger()
+	config.Get()
+}
 
 func main() {
 
-	// config :=
-	config.Get()
-	// logger.Printf("Config %v\n", config)
+	deviceManager := objects.NewDeviceManager()
 
-	serviceManager := dbus.ServiceManager{}
-	serviceManager.Start(dbus.NewDeviceManagerService())
+	m := service.NewManager()
+	m.Start(service.NewService(deviceManager))
 }

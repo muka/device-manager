@@ -2,23 +2,52 @@ package objects
 
 import (
 	"github.com/godbus/dbus"
+	"github.com/godbus/dbus/prop"
+	"github.com/muka/device-manager/api"
 	"log"
 )
 
 // NewDeviceManager initialize a new DeviceManager object
-func NewDeviceManager() (d DeviceManager) {
-	d.Devices = []Device{}
-	return d
+func NewDeviceManager() *DeviceManager {
+	d := DeviceManager{}
+	d.Devices = []dbus.ObjectPath{}
+	return &d
 }
 
 // DeviceManager manages devices in the gateway
 type DeviceManager struct {
-	BaseObject
-	Devices []Device
+	api.Proxy
+
+	Devices []dbus.ObjectPath
+	devices map[string]*DeviceDefinition
+
+	path   string
+	iface  string
+	logger *log.Logger
+}
+
+// GetPath return object path
+func (d *DeviceManager) GetPath() string {
+	return d.path
+}
+
+// GetInterface return interface
+func (d *DeviceManager) GetInterface() string {
+	return d.iface
+}
+
+//SetLogger set default logger
+func (d *DeviceManager) SetLogger(logger *log.Logger) {
+	d.logger = logger
+}
+
+//GetProperties return properties
+func (d *DeviceManager) GetProperties() map[string]map[string]*prop.Prop {
+	return map[string]map[string]*prop.Prop{}
 }
 
 // Find search for devices
-func (d *DeviceManager) Find(q *BaseQuery) (devices []Device, err *dbus.Error) {
+func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus.Error) {
 
 	if &d.Devices == nil {
 		d.Devices = devices
@@ -29,7 +58,6 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []Device, err *dbus.Error) {
 
 // Create add a device
 func (d *DeviceManager) Create(dev DeviceDefinition) (path dbus.ObjectPath, err *dbus.Error) {
-	path = "/iot/agile/device/Dummy"
 	return path, err
 }
 
@@ -54,7 +82,6 @@ func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) 
 	dev.Streams[1].Unit = "lumen"
 
 	log.Printf("Read %s: \n%v\n", id, dev)
-
 	return dev, err
 }
 
