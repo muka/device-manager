@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/godbus/dbus"
@@ -125,28 +126,30 @@ func (d *Service) Export() error {
 	d.logger.Printf("Export to Dbus %s\n", d.GetPath())
 
 	// Expose the object path
-	d.conn.Export(d.GetObject(),
+	d.conn.Export(*d.GetObject(),
 		d.dbusPath,
 		d.GetInterface())
 
 	// Register properties
 	propsSpec := (*d.GetObject()).GetProperties()
 	props := prop.New(d.conn, d.dbusPath, propsSpec)
-	root := &introspect.Node{
+
+	// Build XML node
+	node := &introspect.Node{
 		Name: d.GetPath(),
 		Interfaces: []introspect.Interface{
 			introspect.IntrospectData,
 			prop.IntrospectData,
 			{
 				Name:       d.GetInterface(),
-				Methods:    introspect.Methods(d.GetObject()),
+				Methods:    introspect.Methods(*d.GetObject()),
 				Properties: props.Introspection(d.GetInterface()),
 			},
 		},
 	}
 
 	// Export Introspectable
-	d.conn.Export(introspect.NewIntrospectable(root),
+	d.conn.Export(introspect.NewIntrospectable(node),
 		d.dbusPath,
 		"org.freedesktop.DBus.Introspectable")
 
@@ -159,6 +162,15 @@ func (d *Service) Start() error {
 	// config := config.Get()
 	d.logger.Printf("Started listening on %s %s ...\n",
 		d.GetInterface(), d.GetPath())
+
+	d.conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+		"type='signal',path='/org/freedesktop/DBus',interface='org.freedesktop.DBus',sender='org.freedesktop.DBus'")
+
+	c := make(chan *dbus.Signal, 10)
+	d.conn.Signal(c)
+	for v := range c {
+		fmt.Println(v)
+	}
 
 	select {}
 }
