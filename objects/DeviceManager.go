@@ -5,13 +5,16 @@ import (
 
 	"github.com/godbus/dbus"
 	"github.com/godbus/dbus/prop"
+
 	"github.com/muka/device-manager/api"
+	"github.com/muka/device-manager/service"
+	"github.com/muka/device-manager/util"
 )
 
 // NewDeviceManager initialize a new DeviceManager object
 func NewDeviceManager() *DeviceManager {
 	d := DeviceManager{}
-	d.Devices = []dbus.ObjectPath{}
+	d.Devices = make([]dbus.ObjectPath, 0)
 	d.path = DeviceManagerPath
 	d.iface = DeviceManagerInterface
 	return &d
@@ -22,7 +25,7 @@ type DeviceManager struct {
 	api.Proxy
 
 	Devices []dbus.ObjectPath
-	devices map[string]*DeviceDefinition
+	devices map[string]*service.Service
 
 	path   string
 	iface  string
@@ -34,14 +37,29 @@ func (d *DeviceManager) GetPath() string {
 	return d.path
 }
 
+// SetPath set object path
+func (d *DeviceManager) SetPath(s string) {
+	d.path = s
+}
+
 // GetInterface return interface
 func (d *DeviceManager) GetInterface() string {
 	return d.iface
 }
 
+// SetInterface return interface
+func (d *DeviceManager) SetInterface(s string) {
+	d.iface = s
+}
+
 //SetLogger set default logger
 func (d *DeviceManager) SetLogger(logger *log.Logger) {
 	d.logger = logger
+}
+
+//GetLogger return default logger
+func (d *DeviceManager) GetLogger() *log.Logger {
+	return d.logger
 }
 
 //GetProperties return properties
@@ -61,18 +79,38 @@ func (d *DeviceManager) GetProperties() map[string]map[string]*prop.Prop {
 	}
 }
 
+// -----
+// Dbus API implementation
+
 // Find search for devices
 func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus.Error) {
-
-	if &d.Devices == nil {
-		d.Devices = devices
-	}
-
+	d.logger.Println("DeviceManager.Find() not implemented")
 	return d.Devices, err
 }
 
 // Create add a device
 func (d *DeviceManager) Create(dev DeviceDefinition) (path dbus.ObjectPath, err *dbus.Error) {
+
+	id := util.GenerateID()
+	d.logger.Printf("Create new device %s\n", id)
+	dev.Id = id
+
+	spath := DevicePath + "/" + id
+	path = dbus.ObjectPath(spath)
+	device := NewDevice(dev)
+
+	service, mErr := service.GetManager().Start(device)
+	if mErr != nil {
+		d.logger.Fatalf("Cannot start Device service: %s\n", mErr.Error())
+		return dbus.ObjectPath("failure"), new(dbus.Error)
+	}
+
+	dev.Path = dbus.ObjectPath(device.GetPath())
+
+	d.Devices = append(d.Devices, dev.Path)
+	d.devices[dev.Id] = service
+
+	d.logger.Printf("Created Device %s\n", dev.Id)
 	return path, err
 }
 

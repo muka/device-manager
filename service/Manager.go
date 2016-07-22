@@ -6,6 +6,16 @@ import (
 	"log"
 )
 
+var manager *Manager
+
+// GetManager return the singleton Manager instance
+func GetManager() *Manager {
+	if manager == nil {
+		manager = NewManager()
+	}
+	return manager
+}
+
 // NewManager creates a new Manager instance
 func NewManager() *Manager {
 
@@ -14,6 +24,7 @@ func NewManager() *Manager {
 
 	s := Manager{}
 	s.logger = mlogger
+	s.instances = make(map[string]api.Service)
 
 	return &s
 }
@@ -29,23 +40,37 @@ func (s *Manager) GetService(path string) api.Service {
 	return s.instances[path]
 }
 
-// Start a service and add it to the managed list
-func (s *Manager) Start(service api.Service) {
+// Start create a service from a proxy and start it
+func (s *Manager) Start(p api.Proxy) (*Service, error) {
+	serviceInstance := NewService(p)
+	err := s.StartService(serviceInstance)
+	return serviceInstance, err
+}
+
+// StartService start a service and add it to the managed list
+func (s *Manager) StartService(service api.Service) error {
 
 	var err error
 
 	err = service.New()
-	util.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = service.Connect()
-	util.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	err = service.Export()
-	util.CheckError(err)
+	if err != nil {
+		return err
+	}
 
-	err = service.Start()
-	util.CheckError(err)
+	go service.Start()
 
 	s.instances[service.GetPath()] = service
 	s.logger.Printf("Added service for %s", service.GetPath())
+
+	return nil
 }
