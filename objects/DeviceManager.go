@@ -15,6 +15,7 @@ import (
 func NewDeviceManager() *DeviceManager {
 	d := DeviceManager{}
 	d.Devices = make([]dbus.ObjectPath, 0)
+	d.devices = make(map[string]*service.Service)
 	d.path = DeviceManagerPath
 	d.iface = DeviceManagerInterface
 	return &d
@@ -89,14 +90,13 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 }
 
 // Create add a device
-func (d *DeviceManager) Create(dev DeviceDefinition) (path dbus.ObjectPath, err *dbus.Error) {
+func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Error) {
 
 	id := util.GenerateID()
 	d.logger.Printf("Create new device %s\n", id)
+	d.logger.Printf("Data:\n %v\n", dev)
 	dev.Id = id
 
-	spath := DevicePath + "/" + id
-	path = dbus.ObjectPath(spath)
 	device := NewDevice(dev)
 
 	service, mErr := service.GetManager().Start(device)
@@ -111,7 +111,7 @@ func (d *DeviceManager) Create(dev DeviceDefinition) (path dbus.ObjectPath, err 
 	d.devices[dev.Id] = service
 
 	d.logger.Printf("Created Device %s\n", dev.Id)
-	return path, err
+	return dev.Path, nil
 }
 
 // Read a device definition

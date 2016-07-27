@@ -9,7 +9,7 @@ import (
 // CheckError panic if err is not nil
 func CheckError(err error) {
 	if err != nil {
-		log.Fatalf("Error occured: \n\n%v\n", err)
+		log.Fatalf("An error occured: \n%v\n\n", err)
 		panic(err)
 	}
 }

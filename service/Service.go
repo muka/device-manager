@@ -18,6 +18,8 @@ func NewService(p api.Proxy) *Service {
 
 	logger := util.Logger()
 
+	logger.Printf("Creating new service:\n %v\n", p)
+
 	if p.GetPath() == "" {
 		panic("NewService(): Proxy path is empty")
 	}
@@ -112,8 +114,14 @@ func (d *Service) Connect() error {
 		return err
 	}
 
-	if reply != dbus.RequestNameReplyPrimaryOwner {
-		return errors.New("Name " + d.GetInterface() + " already taken")
+	d.logger.Println(reply)
+
+	if reply != dbus.RequestNameReplyAlreadyOwner {
+
+		if reply != dbus.RequestNameReplyPrimaryOwner {
+			return errors.New("Name " + d.GetInterface() + " already taken")
+		}
+
 	}
 
 	d.logger.Println("Connect completed")

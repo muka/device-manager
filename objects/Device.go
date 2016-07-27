@@ -3,6 +3,8 @@ package objects
 import (
 	"log"
 
+	"github.com/godbus/dbus/prop"
+
 	"github.com/godbus/dbus"
 	"github.com/muka/device-manager/api"
 )
@@ -15,15 +17,19 @@ func NewDevice(def DeviceDefinition) *Device {
 	dev.Id = def.Id
 	dev.Name = def.Name
 	dev.Status = StatusDisconnected
-	dev.Configuration = make(map[string]interface{})
+	dev.Configuration = make(map[string]string)
 
-	dev.Profile = make(map[string]interface{})
+	spath := DevicePath + "/" + dev.Id
+	dev.SetPath(spath)
+	dev.SetInterface(DeviceInterface)
+
+	dev.Profile = make(map[string]DeviceComponent)
 	for _, stream := range def.Streams {
 		dev.Profile[stream.Id] = stream
 	}
 
 	dev.LastUpdate = 0
-	dev.Data = nil
+	dev.Data = &RecordObject{}
 	dev.Protocol = &def.Protocol
 
 	return &dev
@@ -40,9 +46,9 @@ type Device struct {
 	Id            string
 	Name          string
 	Status        StatusType
-	Configuration map[string]interface{}
-	Profile       map[string]interface{}
-	LastUpdate    int
+	Configuration map[string]string
+	Profile       map[string]DeviceComponent
+	LastUpdate    int32
 	Data          *RecordObject
 	Protocol      *dbus.ObjectPath
 }
@@ -77,10 +83,28 @@ func (d *Device) GetLogger() *log.Logger {
 	return d.logger
 }
 
-//! Dbus API implementation
+//GetProperties return properties
+func (d *Device) GetProperties() map[string]map[string]*prop.Prop {
+	return map[string]map[string]*prop.Prop{
+		d.GetInterface(): {
+			"Data": {
+				Value:    d.Data,
+				Writable: false,
+				Emit:     prop.EmitTrue,
+				Callback: func(c *prop.Change) *dbus.Error {
+					d.logger.Printf("Device.Data: Changed value %s=%v on %s", c.Name, c.Value, c.Iface)
+					return nil
+				},
+			},
+		},
+	}
+}
+
+// -----
+// Dbus API implementation
 
 // Execute an operation
-func (d *Device) Execute(op string, payload interface{}) (result ExecuteResult, err *dbus.Error) {
+func (d *Device) Execute(op string, payload string) (result ExecuteResult, err *dbus.Error) {
 	d.logger.Print("Device.Execute() not implemented")
 	return result, nil
 }

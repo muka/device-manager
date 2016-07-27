@@ -7,5 +7,5 @@ type RecordObject struct {
 	Unit        string
 	ComponentId string
 	DeviceId    string
-	LastUpdate  int
+	LastUpdate  int32
 }

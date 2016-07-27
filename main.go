@@ -77,7 +77,7 @@ Usage:
 	}
 
 	if os.Args[1] == "client" {
-		readDevice("test")
+		// readDevice("test")
 		createDevice()
 	} else {
 		startManager()
