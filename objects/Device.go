@@ -106,13 +106,13 @@ func (d *Device) GetProperties() map[string]map[string]*prop.Prop {
 // Execute an operation
 func (d *Device) Execute(op string, payload string) (result ExecuteResult, err *dbus.Error) {
 	d.logger.Print("Device.Execute() not implemented")
-	return result, nil
+	return result, err
 }
 
 // Connect a device
 func (d *Device) Connect() (err *dbus.Error) {
 	d.logger.Print("Device.Connect() not implemented")
-	return nil
+	return err
 }
 
 // Disconnect a device
