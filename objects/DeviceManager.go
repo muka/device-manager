@@ -7,8 +7,25 @@ import (
 	"github.com/godbus/dbus/prop"
 
 	"github.com/muka/device-manager/api"
+	"github.com/muka/device-manager/db"
 	"github.com/muka/device-manager/service"
 	"github.com/muka/device-manager/util"
+)
+
+const (
+	// DeviceManagerDatabasePath path to the database file
+	DeviceManagerDatabasePath = "./data.db"
+	// DeviceManagerTableName Name of the table containing the devices
+	DeviceManagerTableName = "Devices"
+	DeviceManagerFields    = []db.DatasetField{
+		db.DatasetField{"Id", "text", ""},
+		db.DatasetField{"Name", "text", ""},
+		db.DatasetField{"Description", "text", ""},
+		db.DatasetField{"Path", "text", ""},
+		db.DatasetField{"Protocol", "text", ""},
+		db.DatasetField{"Properties", "text", ""},
+		db.DatasetField{"Streams", "text", ""},
+	}
 )
 
 // NewDeviceManager initialize a new DeviceManager object
@@ -18,6 +35,7 @@ func NewDeviceManager() *DeviceManager {
 	d.devices = make(map[string]*service.Service)
 	d.path = DeviceManagerPath
 	d.iface = DeviceManagerInterface
+	d.dataset = db.SqliteDataSet{DeviceManagerTableName, DeviceManagerFields, DeviceManagerDatabasePath}
 	return &d
 }
 
@@ -28,9 +46,10 @@ type DeviceManager struct {
 	Devices []dbus.ObjectPath
 	devices map[string]*service.Service
 
-	path   string
-	iface  string
-	logger *log.Logger
+	path    string
+	iface   string
+	logger  *log.Logger
+	dataset *api.DataSet
 }
 
 // GetPath return object path
