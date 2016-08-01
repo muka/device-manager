@@ -67,7 +67,7 @@ func main() {
 
 	logger := util.Logger()
 
-	if os.Args[1] == "" {
+	if len(os.Args) == 1 {
 		logger.Print(`
 Usage:
 - "client" to run client

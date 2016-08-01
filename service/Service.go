@@ -84,13 +84,16 @@ func (d *Service) GetObject() *api.Proxy {
 // New configure a daemon instance
 func (d *Service) New() error {
 
-	dlogger, err := util.NewLogger(d.GetInterface())
-	if err != nil {
-		return err
+	if (*d.GetObject()).GetLogger() == nil {
+		dlogger, err := util.NewLogger(d.GetInterface())
+		if err != nil {
+			return err
+		}
+		d.logger = dlogger
+		(*d.GetObject()).SetLogger(dlogger)
+	} else {
+		d.logger = (*d.GetObject()).GetLogger()
 	}
-
-	d.logger = dlogger
-	(*d.GetObject()).SetLogger(dlogger)
 
 	d.dbusPath = dbus.ObjectPath(d.GetPath())
 
@@ -113,8 +116,6 @@ func (d *Service) Connect() error {
 	if err != nil {
 		return err
 	}
-
-	d.logger.Println(reply)
 
 	if reply != dbus.RequestNameReplyAlreadyOwner {
 
