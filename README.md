@@ -13,14 +13,15 @@ An AGILE [DeviceManager](http://agile-iot.github.io/agile-api-spec/docs/html/api
 
 - Clone the repository
 - run `glide install` to sync the dependencies
+- `go build`
 
 ##Running
 
 Running the server
-`go run main.go server`
+`./device-manager server`
 
 Running the client (Currently just create a new Device instance)
-`go run main.go client`
+`./device-manager client`
 
 ##License
 
