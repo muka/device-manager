@@ -1,0 +1,15 @@
+hash: 130e7f41b420753ef73947034e31d9d3934570b86649e0a0c46923bd3049a02c
+updated: 2016-08-01T12:49:08.502695666+02:00
+imports:
+- name: github.com/godbus/dbus
+  version: 7a8c533d28e8162671a81090af5b9f78b74e2d26
+  subpackages:
+  - introspect
+  - prop
+- name: github.com/mattn/go-sqlite3
+  version: e118d4451349065b8e7ce0f0af32e033995363f8
+- name: github.com/satori/go.uuid
+  version: 0aa62d5ddceb50dbcb909d790b5345affd3669b6
+- name: gopkg.in/yaml.v2
+  version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
+testImports: []
