@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -114,6 +115,32 @@ func (d *DeviceManager) GetProperties() map[string]map[string]*prop.Prop {
 	}
 }
 
+//parseDeviceRow parse a row to DeviceDefinition
+func (d *DeviceManager) parseDeviceRow(rows *sql.Rows) (*DeviceDefinition, error) {
+	dev := new(DeviceDefinition)
+	var strStreams, strProperties, strPath, strProtocol string
+	err := rows.Scan(
+		&dev.Id,
+		&dev.Name,
+		&dev.Description,
+		&strPath,
+		&strProtocol,
+		&strProperties,
+		&strStreams,
+	)
+	if err != nil {
+		return dev, err
+	}
+
+	dev.Protocol = dbus.ObjectPath(strProtocol)
+	dev.Path = dbus.ObjectPath(strPath)
+
+	json.Unmarshal([]byte(strProperties), dev.Properties)
+	json.Unmarshal([]byte(strProperties), dev.Streams)
+
+	return dev, nil
+}
+
 //restoreDevices reinitialize DBus instances of stored devices
 func (d *DeviceManager) restoreDevices() {
 
@@ -124,25 +151,8 @@ func (d *DeviceManager) restoreDevices() {
 
 	defer rows.Close()
 	for rows.Next() {
-		dev := new(DeviceDefinition)
-		var strStreams, strProperties, strPath, strProtocol string
-		err := rows.Scan(
-			&dev.Id,
-			&dev.Name,
-			&dev.Description,
-			&strPath,
-			&strProtocol,
-			&strProperties,
-			&strStreams,
-		)
+		dev, err := d.parseDeviceRow(rows)
 		util.CheckError(err)
-
-		dev.Protocol = dbus.ObjectPath(strProtocol)
-		dev.Path = dbus.ObjectPath(strPath)
-
-		json.Unmarshal([]byte(strProperties), dev.Properties)
-		json.Unmarshal([]byte(strProperties), dev.Streams)
-
 		d.logger.Printf("Loading device %s (%s)", dev.Name, dev.Id)
 		d.startDeviceInstance(*dev)
 	}
@@ -218,7 +228,7 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 			var op = "="
 			var value = val
 
-			if strings.Contains(value, "%") {
+			if strings.Contains(value, "*") {
 				op = "LIKE"
 				value = strings.Replace(value, "*", "%", 0)
 			}
@@ -243,9 +253,29 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 		query.Limit.Size = int(q.Limit)
 	}
 
-	// rows, err := d.dataset.Find(&query)
+	for k, v := range q.OrderBy {
+		s := db.SortDESC
+		if v == "ASC" {
+			s = db.SortASC
+		}
+		query.OrderBy = OrderBy{k, s}
+		break
+	}
 
-	return d.Devices, err
+	rows, err1 := d.dataset.Find(&query)
+	util.CheckError(err1)
+
+	defer rows.Close()
+	var i = 0
+	devs := make([]dbus.ObjectPath, 0)
+	for rows.Next() {
+		dev, err := d.parseDeviceRow(rows)
+		util.CheckError(err)
+		devs = append(devs, dev.Path)
+		i++
+	}
+
+	return devs, err
 }
 
 // Create add a device
