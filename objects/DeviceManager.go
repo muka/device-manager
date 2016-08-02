@@ -148,7 +148,7 @@ func (d *DeviceManager) restoreDevices() {
 
 }
 
-//restoreDevices reinitialize DBus instances of stored devices
+//startDeviceInstance reinitialize DBus instances of stored devices
 func (d *DeviceManager) startDeviceInstance(dev DeviceDefinition) error {
 
 	device := NewDevice(dev)
@@ -217,14 +217,15 @@ func (d *DeviceManager) saveDevice(dev DeviceDefinition) error {
 			{Name: "Id", Value: dev.Id},
 			{Name: "Name", Value: dev.Name},
 			{Name: "Description", Value: dev.Description},
-			{Name: "Path", Value: dev.Path},
-			{Name: "Protocol", Value: dev.Protocol},
+			{Name: "Path", Value: string(dev.Path)},
+			{Name: "Protocol", Value: string(dev.Protocol)},
 			{Name: "Properties", Value: string(jsonProperties)},
 			{Name: "Streams", Value: string(jsonStreams)},
 		},
 	)
 
 	if err != nil {
+		d.logger.Printf("Error on save: %v\n", err)
 		return err
 	}
 

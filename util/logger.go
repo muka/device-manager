@@ -6,10 +6,20 @@ import (
 	"os"
 )
 
-var logger *log.Logger
+const defaultLoggerName = "app"
+
+var loggers map[string]*log.Logger
 
 // NewLogger return a new instance of a logger
 func NewLogger(name string) (*log.Logger, error) {
+
+	if loggers == nil {
+		loggers = make(map[string]*log.Logger)
+	}
+
+	if loggers[name] != nil {
+		return loggers[name], nil
+	}
 
 	logName := "./logs/" + name + ".log"
 
@@ -25,20 +35,21 @@ func NewLogger(name string) (*log.Logger, error) {
 		name+": ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
+	loggers[name] = instance
 	return instance, nil
 }
 
 // Logger return main logger instance
 func Logger() *log.Logger {
 
-	if logger == nil {
+	if loggers[defaultLoggerName] == nil {
 		appLogger, err := NewLogger("app")
 		if err != nil {
 			log.Fatalf("Cannot load default logger\n %v", err)
 			panic(err)
 		}
-		logger = appLogger
+		loggers[defaultLoggerName] = appLogger
 	}
 
-	return logger
+	return loggers[defaultLoggerName]
 }

@@ -84,15 +84,14 @@ func (d *Service) GetObject() *api.Proxy {
 // New configure a daemon instance
 func (d *Service) New() error {
 
+	dlogger, err := util.NewLogger(d.GetInterface())
+	if err != nil {
+		return err
+	}
+	d.logger = dlogger
+
 	if (*d.GetObject()).GetLogger() == nil {
-		dlogger, err := util.NewLogger(d.GetInterface())
-		if err != nil {
-			return err
-		}
-		d.logger = dlogger
 		(*d.GetObject()).SetLogger(dlogger)
-	} else {
-		d.logger = (*d.GetObject()).GetLogger()
 	}
 
 	d.dbusPath = dbus.ObjectPath(d.GetPath())

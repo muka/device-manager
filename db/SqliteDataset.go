@@ -100,12 +100,17 @@ func (d *SqliteDataset) Save(fieldList []FieldValue) error {
 		args[i] = field.Value
 	}
 
-	stmt := fmt.Sprintf("INSERT OR REPLACE INTO `%s` (%s) VALUES (%s)",
+	query := fmt.Sprintf("INSERT OR REPLACE INTO `%s` (%s) VALUES (%s)",
 		d.tableName,
 		strings.Join(fields, ","),
 		strings.Join(values, ","))
 
-	_, err := d.Query(stmt, args...)
+	stmt, err := d.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(args...)
 
 	return err
 }
@@ -113,7 +118,7 @@ func (d *SqliteDataset) Save(fieldList []FieldValue) error {
 // Query execute a sql statment
 func (d *SqliteDataset) Query(stmt string, args ...interface{}) (*sql.Rows, error) {
 	d.Open()
-	d.logger.Printf("Executing query\n %s [%v]\n", stmt, args)
+	d.logger.Printf("Executing query\n %s -> %v\n", stmt, args)
 	return d.db.Query(stmt, args...)
 }
 
@@ -125,10 +130,10 @@ func (d *SqliteDataset) GetBy(key string, ids ...string) (*sql.Rows, error) {
 // Find records in the db
 func (d *SqliteDataset) Find(q *Query) (*sql.Rows, error) {
 
-	var stmt = "SELECT * FROM " + d.tableName
 	var args = make([]interface{}, 0)
 
-	var where = ""
+	var where string
+	var orderby string
 
 	// var p = 1
 	if q != nil {
@@ -137,25 +142,26 @@ func (d *SqliteDataset) Find(q *Query) (*sql.Rows, error) {
 
 			// p = len(q.Criteria)
 			args = make([]interface{}, len(q.Criteria))
-
+			var whereParts string
 			for i, c := range q.Criteria {
 				// where += c.Prefix + c.Field + c.Operation + "$" + strconv.Itoa(i+1) + c.Suffix
-				where += c.Prefix + c.Field + c.Operation + "?" + c.Suffix
+				whereParts += c.Prefix + c.Field + c.Operation + "?" + c.Suffix
 				args[i] = c.Value
 			}
 
 			if where != "" {
-				stmt += " WHERE " + where
+				where = " WHERE " + whereParts
 			}
 		}
 
 		if &q.OrderBy != nil {
 			// stmt += " ORDER BY $" + strconv.Itoa(p) + " $" + strconv.Itoa(p+1)
-			stmt += " ORDER BY ? ?"
+			orderby += " ORDER BY ? ?"
 			args = append(args, q.OrderBy.Field, q.OrderBy.Sort)
 		}
 
 	}
 
+	var stmt = fmt.Sprintf("SELECT * FROM `%s` %s %s", d.tableName, where, orderby)
 	return d.Query(stmt, args...)
 }
