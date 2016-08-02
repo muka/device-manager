@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/godbus/dbus"
 	"github.com/godbus/dbus/prop"
@@ -169,37 +170,6 @@ func (d *DeviceManager) startDeviceInstance(dev DeviceDefinition) error {
 	return nil
 }
 
-// -----
-// Dbus API implementation
-
-// Find search for devices
-func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus.Error) {
-	d.logger.Println("DeviceManager.Find() not implemented")
-	return d.Devices, err
-}
-
-// Create add a device
-func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Error) {
-
-	var err error
-
-	id := util.GenerateID()
-	d.logger.Printf("Create new device %s\n", id)
-	d.logger.Printf("Data:\n %v\n", dev)
-	dev.Id = id
-
-	d.logger.Printf("Save record for device %s\n", dev.Id)
-	err = d.saveDevice(dev)
-
-	err = d.startDeviceInstance(dev)
-	if err != nil {
-		return dbus.ObjectPath("Error"), &dbus.Error{}
-	}
-
-	d.logger.Printf("Created new device %s\n", dev.Id)
-	return dev.Path, nil
-}
-
 func (d *DeviceManager) saveDevice(dev DeviceDefinition) error {
 
 	jsonProperties, err := json.Marshal(dev.Properties)
@@ -230,6 +200,74 @@ func (d *DeviceManager) saveDevice(dev DeviceDefinition) error {
 	}
 
 	return nil
+}
+
+// -----
+// Dbus API implementation
+
+// Find search for devices
+func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus.Error) {
+	d.logger.Println("DeviceManager.Find() not implemented")
+
+	var query = db.Query{}
+	if q.Criteria != nil {
+		query.Criteria = make([]db.Criteria, len(q.Criteria))
+		var i = 0
+		for key, val := range q.Criteria {
+
+			var op = "="
+			var value = val
+
+			if strings.Contains(value, "%") {
+				op = "LIKE"
+				value = strings.Replace(value, "*", "%", 0)
+			}
+
+			query.Criteria[i] = db.Criteria{
+				Prefix:    "",
+				Field:     key,
+				Operation: op,
+				Value:     value,
+				Suffix:    "",
+			}
+
+			i++
+		}
+	}
+
+	query.Limit = db.Limit{}
+	if q.Offset > 0 {
+		query.Limit.Offset = int(q.Offset)
+	}
+	if q.Limit > 0 {
+		query.Limit.Size = int(q.Limit)
+	}
+
+	// rows, err := d.dataset.Find(&query)
+
+	return d.Devices, err
+}
+
+// Create add a device
+func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Error) {
+
+	var err error
+
+	id := util.GenerateID()
+	d.logger.Printf("Create new device %s\n", id)
+	d.logger.Printf("Data:\n %v\n", dev)
+	dev.Id = id
+
+	d.logger.Printf("Save record for device %s\n", dev.Id)
+	err = d.saveDevice(dev)
+
+	err = d.startDeviceInstance(dev)
+	if err != nil {
+		return dbus.ObjectPath("Error"), &dbus.Error{}
+	}
+
+	d.logger.Printf("Created new device %s\n", dev.Id)
+	return dev.Path, nil
 }
 
 // Read a device definition
