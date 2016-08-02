@@ -68,4 +68,5 @@ type DataSet interface {
 	Find(q *Query) (*sql.Rows, error)
 	Query(stmt string, args ...interface{}) (*sql.Rows, error)
 	Save(fieldList []FieldValue) error
+	Delete(field FieldValue) error
 }

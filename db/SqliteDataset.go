@@ -124,7 +124,13 @@ func (d *SqliteDataset) Query(stmt string, args ...interface{}) (*sql.Rows, erro
 
 // GetBy get records for a field / value match
 func (d *SqliteDataset) GetBy(key string, ids ...string) (*sql.Rows, error) {
-	return d.Query("SELECT * FROM "+d.tableName+" WHERE ? IN (?)", key, ids)
+	return d.Query(fmt.Sprintf("SELECT * FROM `%s` WHERE ? IN (?)", d.tableName), key, ids)
+}
+
+// Delete a record by id
+func (d *SqliteDataset) Delete(field FieldValue) error {
+	_, err := d.Query(fmt.Sprintf("DELETE FROM `%s` WHERE %s = ?", d.tableName, field.Name), field.Value)
+	return err
 }
 
 // Find records in the db

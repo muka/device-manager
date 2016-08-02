@@ -323,6 +323,10 @@ func (d *DeviceManager) Update(id string, dev DeviceDefinition) (res bool, err *
 // Delete a device definition
 func (d *DeviceManager) Delete(id string) (res bool, err *dbus.Error) {
 	res = true
+	err1 := d.dataset.Delete(id)
+	if err1 == nil {
+		res = true
+	}
 	return res, err
 }
 
