@@ -12,3 +12,8 @@ const (
 	// DeviceInterface interface for Device
 	DeviceInterface = "iot.agile.Device"
 )
+
+//GetDevicePath return a device path by id
+func GetDevicePath(id string) string {
+	return DevicePath + "/" + id
+}

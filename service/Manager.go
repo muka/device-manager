@@ -47,6 +47,17 @@ func (s *Manager) Start(p api.Proxy) (*Service, error) {
 	return serviceInstance, err
 }
 
+// Stop a running service
+func (s *Manager) Stop(p api.Proxy) error {
+	serviceInstance := s.instances[p.GetPath()]
+	err := serviceInstance.Stop()
+	if err != nil {
+		return err
+	}
+	delete(s.instances, p.GetPath())
+	return nil
+}
+
 // StartService start a service and add it to the managed list
 func (s *Manager) StartService(service api.Service) error {
 

@@ -258,7 +258,7 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 		if v == "ASC" {
 			s = db.SortASC
 		}
-		query.OrderBy = OrderBy{k, s}
+		query.OrderBy = db.OrderBy{Field: k, Sort: s}
 		break
 	}
 
@@ -267,7 +267,7 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 
 	defer rows.Close()
 	var i = 0
-	devs := make([]dbus.ObjectPath, 0)
+	var devs = make([]dbus.ObjectPath, 0)
 	for rows.Next() {
 		dev, err := d.parseDeviceRow(rows)
 		util.CheckError(err)
@@ -290,9 +290,14 @@ func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Err
 
 	d.logger.Printf("Save record for device %s\n", dev.Id)
 	err = d.saveDevice(dev)
+	if err != nil {
+		d.logger.Fatalf("Error saving record for device %s\n", dev.Id)
+		return dbus.ObjectPath("Error"), &dbus.Error{}
+	}
 
 	err = d.startDeviceInstance(dev)
 	if err != nil {
+		d.logger.Fatalf("Error starting service for device %s\n", dev.Id)
 		return dbus.ObjectPath("Error"), &dbus.Error{}
 	}
 
@@ -316,18 +321,44 @@ func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) 
 
 // Update a device definition
 func (d *DeviceManager) Update(id string, dev DeviceDefinition) (res bool, err *dbus.Error) {
-	res = true
-	return res, err
+
+	if _, exists := d.devices[id]; !exists {
+		d.logger.Fatalf("Device %s not found\n", id)
+		return false, new(dbus.Error)
+	}
+
+	return true, err
 }
 
 // Delete a device definition
 func (d *DeviceManager) Delete(id string) (res bool, err *dbus.Error) {
-	res = true
-	err1 := d.dataset.Delete(id)
-	if err1 == nil {
-		res = true
+
+	d.logger.Printf("Removing device %s\n", id)
+
+	if _, exists := d.devices[id]; !exists {
+		d.logger.Fatalf("Device %s not found\n", id)
+		return false, new(dbus.Error)
 	}
-	return res, err
+
+	devService := d.services[id]
+
+	mErr := devService.Stop()
+	if mErr != nil {
+		d.logger.Fatalf("Cannot stop service for device %s\n", id)
+		return false, new(dbus.Error)
+	}
+
+	err1 := d.dataset.Delete(db.FieldValue{Name: "Id", Value: id})
+	if err1 == nil {
+		d.logger.Fatalf("Cannot stop service for device %s\n", id)
+		return false, new(dbus.Error)
+	}
+
+	delete(d.devices, id)
+	delete(d.services, id)
+
+	d.logger.Printf("Removed device %s\n", id)
+	return true, err
 }
 
 // Batch exec batch ops

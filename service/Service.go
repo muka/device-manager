@@ -171,6 +171,7 @@ func (d *Service) Start() error {
 	d.logger.Printf("Started listening on %s %s ...\n",
 		d.GetInterface(), d.GetPath())
 
+	// ToDo match with proper interface & path
 	d.conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
 		"type='signal',path='/org/freedesktop/DBus',interface='org.freedesktop.DBus',sender='org.freedesktop.DBus'")
 
@@ -183,12 +184,13 @@ func (d *Service) Start() error {
 	select {}
 }
 
-// Stop stop the daemon
+// Stop stops the daemon and unexport the proxied object
 func (d *Service) Stop() error {
 	if d.conn != nil {
 		d.conn.Export(nil, d.dbusPath, d.GetInterface())
-		d.conn.ReleaseName(d.GetInterface())
+		// d.conn.ReleaseName(d.GetInterface())
 		d.logger.Printf("Service %s stopped\n", d.GetPath())
+		d.conn = nil
 	} else {
 		d.logger.Println("Service already stopped")
 	}
