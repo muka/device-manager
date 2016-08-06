@@ -343,13 +343,24 @@ func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) 
 // Update a device definition
 func (d *DeviceManager) Update(id string, dev DeviceDefinition) (res bool, err *dbus.Error) {
 
-	// Check if it is loaded
-	if _, exists := d.devices[id]; !exists {
-		d.logger.Fatalf("Device %s not found\n", id)
-		return false, new(dbus.Error)
+	// Check if device exists
+	if localDev, exists := d.devices[id]; exists {
+
+		localDev.Name = dev.Name
+		localDev.Description = dev.Description
+		localDev.Path = dev.Path
+		localDev.Protocol = dev.Protocol
+		localDev.Properties = dev.Properties
+		localDev.Streams = dev.Streams
+
+		d.saveDevice(*localDev)
+
+		d.logger.Printf("Device %s updated\n", id)
+		return true, err
 	}
 
-	return true, err
+	d.logger.Fatalf("Device %s not found\n", id)
+	return false, new(dbus.Error)
 }
 
 // Delete a device definition
