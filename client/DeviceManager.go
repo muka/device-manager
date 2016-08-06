@@ -21,6 +21,14 @@ type DeviceManager struct {
 	logger *log.Logger
 }
 
+// Find a list of device
+func (d *DeviceManager) Find(q *objects.BaseQuery) []dbus.ObjectPath {
+	var s []dbus.ObjectPath
+	err := d.client.Call("Find", 0, q).Store(&s)
+	util.CheckError(err)
+	return s
+}
+
 // Create a new device
 func (d *DeviceManager) Create(dev objects.DeviceDefinition) (dbus.ObjectPath, error) {
 	var s dbus.ObjectPath
