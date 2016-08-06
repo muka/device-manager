@@ -159,7 +159,7 @@ func (d *DeviceManager) restoreDevices() {
 
 }
 
-//startDeviceInstance reinitialize DBus instances of stored devices
+//startDeviceInstance start a device instance daemon service
 func (d *DeviceManager) startDeviceInstance(dev DeviceDefinition) error {
 
 	device := NewDevice(dev)
@@ -180,6 +180,27 @@ func (d *DeviceManager) startDeviceInstance(dev DeviceDefinition) error {
 	return nil
 }
 
+//loadDevice load from database a device definition
+func (d *DeviceManager) loadDevice(id string) (*DeviceDefinition, error) {
+	rows, err := d.dataset.GetBy("Id", id)
+	if err != nil {
+		d.logger.Fatalf("Cannot load device record %s", id)
+		return nil, err
+	}
+
+	var dev DeviceDefinition
+	defer rows.Close()
+	for rows.Next() {
+		dev, err := d.parseDeviceRow(rows)
+		util.CheckError(err)
+		d.logger.Printf("Loaded record for device %s (%s)", dev.Name, dev.Id)
+		break
+	}
+
+	return &dev, nil
+}
+
+//saveDevice save to database a device definition
 func (d *DeviceManager) saveDevice(dev DeviceDefinition) error {
 
 	jsonProperties, err := json.Marshal(dev.Properties)
@@ -322,6 +343,7 @@ func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) 
 // Update a device definition
 func (d *DeviceManager) Update(id string, dev DeviceDefinition) (res bool, err *dbus.Error) {
 
+	// Check if it is loaded
 	if _, exists := d.devices[id]; !exists {
 		d.logger.Fatalf("Device %s not found\n", id)
 		return false, new(dbus.Error)
@@ -362,10 +384,10 @@ func (d *DeviceManager) Delete(id string) (res bool, err *dbus.Error) {
 }
 
 // Batch exec batch ops
-func (d *DeviceManager) Batch(operation string, ops map[string]string) (res bool, err *dbus.Error) {
-	res = true
-	return res, err
-}
+// func (d *DeviceManager) Batch(operation string, ops map[string]string) (res bool, err *dbus.Error) {
+// 	res = true
+// 	return res, err
+// }
 
 // BaseQuery base query for devices record
 type BaseQuery struct {

@@ -26,7 +26,16 @@ func (d *DeviceManager) Create(dev objects.DeviceDefinition) (dbus.ObjectPath, e
 	var s dbus.ObjectPath
 	err := d.client.Call("Create", 0, dev).Store(&s)
 	util.CheckError(err)
-	d.logger.Printf("Loaded Device at path\n %v\n", s)
+	d.logger.Printf("Created device at path\n %v\n", s)
+	return s, nil
+}
+
+// Update a device
+func (d *DeviceManager) Update(id string, dev objects.DeviceDefinition) (bool, error) {
+	var s bool
+	err := d.client.Call("Create", 0, id, dev).Store(&s)
+	util.CheckError(err)
+	d.logger.Printf("Updated device %s\n", id)
 	return s, nil
 }
 
@@ -36,4 +45,12 @@ func (d *DeviceManager) Read(id string) (*objects.DeviceDefinition, error) {
 	err := d.client.Call("Read", 0, id).Store(&s)
 	util.CheckError(err)
 	return &s, nil
+}
+
+// Delete a device definition
+func (d *DeviceManager) Delete(id string) (bool, error) {
+	var s bool
+	err := d.client.Call("Delete", 0, id).Store(&s)
+	util.CheckError(err)
+	return s, nil
 }
