@@ -47,7 +47,8 @@ func main() {
 	// if os.Args[1] == "client" {
 	// 	readDevice("test")
 	// } else {
-	StarDeviceManager()
+
+	go StarDeviceManager()
 	select {}
 	// }
 }

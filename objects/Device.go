@@ -7,6 +7,7 @@ import (
 
 	"github.com/godbus/dbus"
 	"github.com/muka/device-manager/api"
+	"github.com/robertkrimen/otto"
 )
 
 //NewDevice create a new Device instance
@@ -123,8 +124,28 @@ func (d *Device) Disconnect() (err *dbus.Error) {
 
 // Read data from a component
 func (d *Device) Read(componentId string) (record *RecordObject, err *dbus.Error) {
-	d.logger.Print("Device.Read() not implemented")
-	return record, nil
+
+	vm := otto.New()
+	value, jserr := vm.Run(`return (new Date()).getTime();`)
+
+	if jserr != nil {
+		return nil, &dbus.Error{}
+	}
+
+	if val, err := value.ToString(); err == nil {
+
+		d.logger.Printf("Result call for %s: %s\n", componentId, val)
+
+		record = &RecordObject{}
+		record.ComponentId = componentId
+		record.DeviceId = d.Id
+		record.Value = val
+		record.Format = "int32"
+		record.Unit = "whatever"
+
+	}
+
+	return nil, &dbus.Error{}
 }
 
 // Write data to a component
