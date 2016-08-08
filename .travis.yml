@@ -1,0 +1,27 @@
+# inspired from https://github.com/tcnksm-sample/travis-golang
+
+language: go
+
+env:
+  - "PATH=/home/travis/gopath/bin:$PATH"
+
+go:
+  - 1.6
+  - release
+  - tip
+
+before_install:
+
+  - go get github.com/tools/godep
+
+  # - go get github.com/mitchellh/gox
+  # - gox -build-toolchain
+
+  # - go get github.com/tcnksm/ghr
+
+script:
+  - go test -v ./...
+
+# after_success:
+  # - gox -output "dist/{{.OS}}_{{.Arch}}_{{.Dir}}"
+  # - ghr --username tcnksm-sample --token $GITHUB_TOKEN --replace --prerelease --debug pre-release dist/
