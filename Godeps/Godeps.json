@@ -1,9 +1,20 @@
 {
 	"ImportPath": "github.com/muka/device-manager",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
 	"Deps": [
 		{
 			"ImportPath": "github.com/godbus/dbus",
+			"Comment": "v4.0.0-5-g32c6cc2",
+			"Rev": "32c6cc29c14570de4cf6d7e7737d68fb2d01ad15"
+		},
+		{
+			"ImportPath": "github.com/godbus/dbus/introspect",
+			"Comment": "v4.0.0-5-g32c6cc2",
+			"Rev": "32c6cc29c14570de4cf6d7e7737d68fb2d01ad15"
+		},
+		{
+			"ImportPath": "github.com/godbus/dbus/prop",
 			"Comment": "v4.0.0-5-g32c6cc2",
 			"Rev": "32c6cc29c14570de4cf6d7e7737d68fb2d01ad15"
 		},
