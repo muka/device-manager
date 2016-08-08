@@ -31,3 +31,4 @@ device-manager
 logs
 data
 .glide
+build/*
