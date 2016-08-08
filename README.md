@@ -1,3 +1,6 @@
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/muka/device-manager)](https://goreportcard.com/report/github.com/muka/device-manager)
+
 # AGILE Device Manager service
 
 An AGILE [DeviceManager](http://agile-iot.github.io/agile-api-spec/docs/html/api.html#iot_agile_DeviceManager) implementation.
