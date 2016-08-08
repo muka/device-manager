@@ -85,16 +85,16 @@ func TestReadDevice(t *testing.T) {
 func TestFindDevice(t *testing.T) {
 
 	deviceManagerClient := client.NewDeviceManager()
-	dev, err := deviceManagerClient.Find()
+
+	query := objects.BaseQuery{}
+	rows, err := deviceManagerClient.Find(&query)
 
 	if err != nil {
 		t.Fail()
 	}
 
-	if len(dev.Streams) == 1 {
-		if dev.Streams[0].Id == defaultDeviceStreamID {
-			return
-		}
+	if len(rows) == 0 {
+		t.Fail()
 	}
-	t.Fail()
+
 }

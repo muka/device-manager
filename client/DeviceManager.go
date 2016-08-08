@@ -22,43 +22,36 @@ type DeviceManager struct {
 }
 
 // Find a list of device
-func (d *DeviceManager) Find(q *objects.BaseQuery) []dbus.ObjectPath {
+func (d *DeviceManager) Find(q *objects.BaseQuery) ([]dbus.ObjectPath, error) {
 	var s []dbus.ObjectPath
 	err := d.client.Call("Find", 0, q).Store(&s)
-	util.CheckError(err)
-	return s
+	return s, err
 }
 
 // Create a new device
 func (d *DeviceManager) Create(dev objects.DeviceDefinition) (objects.DeviceDefinition, error) {
 	var s objects.DeviceDefinition
 	err := d.client.Call("Create", 0, dev).Store(&s)
-	util.CheckError(err)
-	d.logger.Printf("Created device %v (%s)", s.Id, s.Path)
-	return s, nil
+	return s, err
 }
 
 // Update a device
 func (d *DeviceManager) Update(id string, dev objects.DeviceDefinition) (bool, error) {
 	var s bool
 	err := d.client.Call("Create", 0, id, dev).Store(&s)
-	util.CheckError(err)
-	d.logger.Printf("Updated device %s\n", id)
-	return s, nil
+	return s, err
 }
 
 // Read a device definition
 func (d *DeviceManager) Read(id string) (*objects.DeviceDefinition, error) {
 	var s objects.DeviceDefinition
 	err := d.client.Call("Read", 0, id).Store(&s)
-	util.CheckError(err)
-	return &s, nil
+	return &s, err
 }
 
 // Delete a device definition
 func (d *DeviceManager) Delete(id string) (bool, error) {
 	var s bool
 	err := d.client.Call("Delete", 0, id).Store(&s)
-	util.CheckError(err)
-	return s, nil
+	return s, err
 }
