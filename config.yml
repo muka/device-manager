@@ -1,2 +1,6 @@
 
-XMLSpecPath: ~/git/github.com/agile-api-spec/docs/dbus-xml
+debug: true
+
+paths:
+  db: ./data
+  logs: ./logs

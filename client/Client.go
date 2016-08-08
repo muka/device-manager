@@ -9,6 +9,8 @@ import (
 	"github.com/muka/device-manager/util"
 )
 
+var dbusConn *dbus.Conn
+
 // NewClient create a new client
 func NewClient(iface string, path string) *Client {
 
@@ -42,13 +44,16 @@ func (c *Client) Connect() error {
 
 	c.logger.Println("Connecting to DBus")
 
-	conn, err := dbus.SessionBus()
-	if err != nil {
-		return err
+	if dbusConn == nil {
+		conn, err := dbus.SessionBus()
+		if err != nil {
+			return err
+		}
+		dbusConn = conn
 	}
 
-	c.conn = conn
-	c.dbusObject = conn.Object(c.iface, dbus.ObjectPath(c.path))
+	c.conn = dbusConn
+	c.dbusObject = c.conn.Object(c.iface, dbus.ObjectPath(c.path))
 
 	c.logger.Println("Connected")
 

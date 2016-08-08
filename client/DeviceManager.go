@@ -30,11 +30,11 @@ func (d *DeviceManager) Find(q *objects.BaseQuery) []dbus.ObjectPath {
 }
 
 // Create a new device
-func (d *DeviceManager) Create(dev objects.DeviceDefinition) (dbus.ObjectPath, error) {
-	var s dbus.ObjectPath
+func (d *DeviceManager) Create(dev objects.DeviceDefinition) (objects.DeviceDefinition, error) {
+	var s objects.DeviceDefinition
 	err := d.client.Call("Create", 0, dev).Store(&s)
 	util.CheckError(err)
-	d.logger.Printf("Created device at path\n %v\n", s)
+	d.logger.Printf("Created device %v (%s)", s.Id, s.Path)
 	return s, nil
 }
 

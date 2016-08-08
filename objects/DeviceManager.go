@@ -37,7 +37,7 @@ var deviceManagerFields = []db.DatasetField{
 func NewDeviceManager() *DeviceManager {
 	d := DeviceManager{}
 
-	dmlogger, err := util.NewLogger(d.GetInterface())
+	dmlogger, err := util.NewLogger("DeviceManager")
 	util.CheckError(err)
 
 	d.logger = dmlogger
@@ -238,7 +238,6 @@ func (d *DeviceManager) saveDevice(dev DeviceDefinition) error {
 
 // Find search for devices
 func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus.Error) {
-	d.logger.Println("DeviceManager.Find() not implemented")
 
 	var query = db.Query{}
 	if q.Criteria != nil {
@@ -300,7 +299,7 @@ func (d *DeviceManager) Find(q *BaseQuery) (devices []dbus.ObjectPath, err *dbus
 }
 
 // Create add a device
-func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Error) {
+func (d *DeviceManager) Create(dev DeviceDefinition) (DeviceDefinition, *dbus.Error) {
 
 	var err error
 
@@ -313,25 +312,25 @@ func (d *DeviceManager) Create(dev DeviceDefinition) (dbus.ObjectPath, *dbus.Err
 	err = d.saveDevice(dev)
 	if err != nil {
 		d.logger.Fatalf("Error saving record for device %s\n", dev.Id)
-		return dbus.ObjectPath("Error"), &dbus.Error{}
+		return DeviceDefinition{}, &dbus.Error{}
 	}
 
 	err = d.startDeviceInstance(dev)
 	if err != nil {
 		d.logger.Fatalf("Error starting service for device %s\n", dev.Id)
-		return dbus.ObjectPath("Error"), &dbus.Error{}
+		return DeviceDefinition{}, &dbus.Error{}
 	}
 
 	d.logger.Printf("Created new device %s\n", dev.Id)
-	return dev.Path, nil
+	return dev, nil
 }
 
 // Read a device definition
 func (d *DeviceManager) Read(id string) (dev DeviceDefinition, err *dbus.Error) {
 
 	if d.devices[id] != nil {
-		d.logger.Printf("Read %s: \n%v\n", id, dev)
 		dev = *d.devices[id]
+		d.logger.Printf("Read %s: \n%v\n", id, dev)
 	} else {
 		d.logger.Printf("Device %s: Not Found : \n", id)
 		err = new(dbus.Error)

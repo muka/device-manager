@@ -13,7 +13,8 @@ const defaultPath string = "./config.yml"
 
 // Config the parsed configuration object
 type Config struct {
-	APISpecPath string `yaml:"XMLSpecPath"`
+	debug bool              `yaml:"debug"`
+	paths map[string]string `yaml:"paths"`
 }
 
 var cfg *Config
@@ -37,13 +38,13 @@ func Load(path string) error {
 	logger.Println("Load configuration")
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		logger.Fatalf("File not found (%v)", err)
+		logger.Fatalf("Configuration file not found (%v)\n", err)
 		return err
 	}
 
 	data, err := fetch.GetContent(path)
 	if err != nil {
-		logger.Fatalf("error: %v", err)
+		logger.Fatalf("Cannot read configuration file: \n%v\n", err)
 		return err
 	}
 
