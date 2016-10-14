@@ -6,6 +6,7 @@ import (
 	"github.com/muka/device-manager/objects"
 	"github.com/muka/device-manager/service"
 	"github.com/muka/device-manager/util"
+	"os"
 )
 
 func init() {
@@ -33,21 +34,21 @@ var ReadDevice = func(id string) {
 
 func main() {
 
-	// 	logger := util.Logger()
-	//
-	// 	if len(os.Args) == 1 {
-	// 		logger.Print(`
-	// Usage:
-	// - "client" to run client
-	// - "server" to run server
-	// `)
-	// 		return
-	// 	}
+	logger := util.Logger()
 
-	// if os.Args[1] == "client" {
-	// 	readDevice("test")
-	// } else {
-	StarDeviceManager()
-	select {}
-	// }
+	if len(os.Args) == 1 {
+		logger.Print(`
+	Usage:
+	- "client" to run client
+	- "server" to run server
+	`)
+		return
+	}
+
+	if os.Args[1] == "client" {
+		ReadDevice("test")
+	} else {
+		StarDeviceManager()
+		select {}
+	}
 }

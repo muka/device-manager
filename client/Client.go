@@ -9,10 +9,23 @@ import (
 	"github.com/muka/device-manager/util"
 )
 
-var dbusConn *dbus.Conn
+const (
+	// SessionBus uses the session bus
+	SessionBus = 0
+	// SystemBus uses the system bus
+	SystemBus = 1
+)
+
+// Config pass configuration to a DBUS client
+type Config struct {
+	Name  string
+	Iface string
+	Path  string
+	Bus   int
+}
 
 // NewClient create a new client
-func NewClient(iface string, path string) *Client {
+func NewClient(config *Config) *Client {
 
 	c := new(Client)
 
@@ -20,8 +33,11 @@ func NewClient(iface string, path string) *Client {
 	util.CheckError(err)
 
 	c.logger = logger
-	c.path = path
-	c.iface = iface
+
+	c.path = config.Path
+	c.iface = config.Iface
+	c.name = config.Name
+	c.bus = config.Bus
 
 	return c
 }
@@ -31,8 +47,10 @@ type Client struct {
 	logger     *log.Logger
 	conn       *dbus.Conn
 	dbusObject dbus.BusObject
+	bus        int
 	iface      string
 	path       string
+	name       string
 }
 
 func (c *Client) isConnected() bool {
@@ -44,18 +62,27 @@ func (c *Client) Connect() error {
 
 	c.logger.Println("Connecting to DBus")
 
-	if dbusConn == nil {
-		conn, err := dbus.SessionBus()
-		if err != nil {
-			return err
+	var getConn = func() (*dbus.Conn, error) {
+		if c.bus == SystemBus {
+			c.logger.Println("Using SystemBus")
+			return dbus.SystemBus()
+		} else if c.bus == SessionBus {
+			c.logger.Println("Using SessionBus")
+			return dbus.SessionBus()
+		} else {
+			return nil, nil
 		}
-		dbusConn = conn
+	}
+
+	dbusConn, err := getConn()
+	if err != nil {
+		return err
 	}
 
 	c.conn = dbusConn
-	c.dbusObject = c.conn.Object(c.iface, dbus.ObjectPath(c.path))
+	c.dbusObject = c.conn.Object(c.name, dbus.ObjectPath(c.path))
 
-	c.logger.Println("Connected")
+	c.logger.Printf("Connected to %s %s\n", c.name, c.path)
 
 	return nil
 }
@@ -68,19 +95,6 @@ func (c *Client) Call(method string, flags dbus.Flags, args ...interface{}) *dbu
 	}
 
 	methodPath := c.iface + "." + method
-
-	// var callArgs = make([]interface{}, 0)
-	// for _, arg := range args {
-	// 	if reflect.TypeOf(arg).Kind() == reflect.Struct {
-	//
-	// 		for _, value := range structs.Values(arg) {
-	// 			callArgs = append(callArgs, value)
-	// 		}
-	//
-	// 	} else {
-	// 		callArgs = append(callArgs, arg)
-	// 	}
-	// }
 
 	callArgs := args
 	c.logger.Printf("Call %s( %v )\n", methodPath, callArgs)

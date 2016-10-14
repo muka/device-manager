@@ -10,7 +10,13 @@ import (
 // NewDeviceManager create a new DeviceManager client
 func NewDeviceManager() *DeviceManager {
 	d := new(DeviceManager)
-	d.client = NewClient(objects.DeviceManagerInterface, objects.DeviceManagerPath)
+	d.client = NewClient(
+		&Config{
+			Name:  objects.DeviceManagerInterface,
+			Path:  objects.DeviceManagerPath,
+			Iface: objects.DeviceManagerInterface,
+		},
+	)
 	d.logger = util.Logger()
 	return d
 }
