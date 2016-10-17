@@ -1,0 +1,9 @@
+package: github.com/muka/device-manager
+import:
+- package: github.com/godbus/dbus
+  subpackages:
+  - introspect
+  - prop
+- package: github.com/mattn/go-sqlite3
+- package: github.com/satori/go.uuid
+- package: gopkg.in/yaml.v2

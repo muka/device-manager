@@ -2,7 +2,6 @@ package client
 
 import (
 	"log"
-	// "reflect"
 
 	// "github.com/fatih/structs"
 	"github.com/godbus/dbus"
@@ -32,12 +31,8 @@ func NewClient(config *Config) *Client {
 	logger, err := util.NewLogger("client")
 	util.CheckError(err)
 
+	c.Config = config
 	c.logger = logger
-
-	c.path = config.Path
-	c.iface = config.Iface
-	c.name = config.Name
-	c.bus = config.Bus
 
 	return c
 }
@@ -47,6 +42,7 @@ type Client struct {
 	logger     *log.Logger
 	conn       *dbus.Conn
 	dbusObject dbus.BusObject
+	Config     *Config
 	bus        int
 	iface      string
 	path       string
@@ -61,15 +57,15 @@ func (c *Client) isConnected() bool {
 func (c *Client) Connect() error {
 
 	c.logger.Println("Connecting to DBus")
-
 	var getConn = func() (*dbus.Conn, error) {
-		if c.bus == SystemBus {
+		if c.Config.Bus == SystemBus {
 			c.logger.Println("Using SystemBus")
 			return dbus.SystemBus()
-		} else if c.bus == SessionBus {
+		} else if c.Config.Bus == SessionBus {
 			c.logger.Println("Using SessionBus")
 			return dbus.SessionBus()
 		} else {
+			c.logger.Println("Unknown Bus!")
 			return nil, nil
 		}
 	}
@@ -80,10 +76,9 @@ func (c *Client) Connect() error {
 	}
 
 	c.conn = dbusConn
-	c.dbusObject = c.conn.Object(c.name, dbus.ObjectPath(c.path))
+	c.dbusObject = c.conn.Object(c.Config.Name, dbus.ObjectPath(c.Config.Path))
 
-	c.logger.Printf("Connected to %s %s\n", c.name, c.path)
-
+	c.logger.Printf("Connected to %s %s\n", c.Config.Name, c.Config.Path)
 	return nil
 }
 
@@ -91,7 +86,12 @@ func (c *Client) Connect() error {
 func (c *Client) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
 
 	if !c.isConnected() {
-		c.Connect()
+		err := c.Connect()
+		if err != nil {
+			return &dbus.Call{
+				Err: err,
+			}
+		}
 	}
 
 	methodPath := c.iface + "." + method
@@ -105,7 +105,28 @@ func (c *Client) Call(method string, flags dbus.Flags, args ...interface{}) *dbu
 //GetProperty return a property value
 func (c *Client) GetProperty(p string) (dbus.Variant, error) {
 	if !c.isConnected() {
-		c.Connect()
+		return dbus.Variant{}, c.Connect()
 	}
 	return c.dbusObject.GetProperty(p)
+}
+
+//GetProperties load all the properties for an interface
+func (c *Client) GetProperties(props interface{}) error {
+
+	if !c.isConnected() {
+		err := c.Connect()
+		if err != nil {
+			return err
+		}
+	}
+
+	c.logger.Printf("Loading properties for %s", c.Config.Iface)
+
+	result := make(map[string]dbus.Variant)
+	err := c.dbusObject.Call("org.freedesktop.DBus.Properties.GetAll", 0, c.Config.Iface).Store(&result)
+	if err != nil {
+		return err
+	}
+
+	return util.MapToStruct(props, result)
 }
