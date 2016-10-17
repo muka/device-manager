@@ -15,6 +15,8 @@ const (
 	SystemBus = 1
 )
 
+var conns = make([]*dbus.Conn, 2)
+
 // Config pass configuration to a DBUS client
 type Config struct {
 	Name  string
@@ -43,10 +45,6 @@ type Client struct {
 	conn       *dbus.Conn
 	dbusObject dbus.BusObject
 	Config     *Config
-	bus        int
-	iface      string
-	path       string
-	name       string
 }
 
 func (c *Client) isConnected() bool {
@@ -58,15 +56,36 @@ func (c *Client) Connect() error {
 
 	c.logger.Println("Connecting to DBus")
 	var getConn = func() (*dbus.Conn, error) {
-		if c.Config.Bus == SystemBus {
-			c.logger.Println("Using SystemBus")
-			return dbus.SystemBus()
-		} else if c.Config.Bus == SessionBus {
-			c.logger.Println("Using SessionBus")
-			return dbus.SessionBus()
-		} else {
-			c.logger.Println("Unknown Bus!")
-			return nil, nil
+		switch c.Config.Bus {
+		case SystemBus:
+			{
+				c.logger.Println("Using SystemBus")
+				if conns[SystemBus] == nil {
+					conn, err := dbus.SystemBus()
+					if err != nil {
+						return nil, err
+					}
+					conns[SystemBus] = conn
+				}
+				return conns[SystemBus], nil
+			}
+		case SessionBus:
+			{
+				c.logger.Println("Using SessionBus")
+				if conns[SessionBus] == nil {
+					conn, err := dbus.SessionBus()
+					if err != nil {
+						return nil, err
+					}
+					conns[SessionBus] = conn
+				}
+				return conns[SessionBus], nil
+			}
+		default:
+			{
+				c.logger.Println("TODO: Unknown Bus, handle other types!")
+				return nil, nil
+			}
 		}
 	}
 
@@ -94,7 +113,7 @@ func (c *Client) Call(method string, flags dbus.Flags, args ...interface{}) *dbu
 		}
 	}
 
-	methodPath := c.iface + "." + method
+	methodPath := c.Config.Iface + "." + method
 
 	callArgs := args
 	c.logger.Printf("Call %s( %v )\n", methodPath, callArgs)
