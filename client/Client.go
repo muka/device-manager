@@ -51,16 +51,25 @@ func (c *Client) isConnected() bool {
 	return c.conn != nil
 }
 
+//Disconnect from DBus
+func (c *Client) Disconnect() {
+	if c.isConnected() {
+		c.conn.Close()
+		c.conn = nil
+		c.dbusObject = nil
+		c.logger.Println("Client disconnected")
+	}
+}
+
 // Connect connect to DBus
 func (c *Client) Connect() error {
 
-	c.logger.Println("Connecting to DBus")
 	var getConn = func() (*dbus.Conn, error) {
 		switch c.Config.Bus {
 		case SystemBus:
 			{
-				c.logger.Println("Using SystemBus")
 				if conns[SystemBus] == nil {
+					c.logger.Println("Connecting to SystemBus")
 					conn, err := dbus.SystemBus()
 					if err != nil {
 						return nil, err
@@ -71,8 +80,8 @@ func (c *Client) Connect() error {
 			}
 		case SessionBus:
 			{
-				c.logger.Println("Using SessionBus")
 				if conns[SessionBus] == nil {
+					c.logger.Println("Connecting to SessionBus")
 					conn, err := dbus.SessionBus()
 					if err != nil {
 						return nil, err
@@ -124,7 +133,10 @@ func (c *Client) Call(method string, flags dbus.Flags, args ...interface{}) *dbu
 //GetProperty return a property value
 func (c *Client) GetProperty(p string) (dbus.Variant, error) {
 	if !c.isConnected() {
-		return dbus.Variant{}, c.Connect()
+		err := c.Connect()
+		if err != nil {
+			return dbus.Variant{}, err
+		}
 	}
 	return c.dbusObject.GetProperty(p)
 }
@@ -148,4 +160,42 @@ func (c *Client) GetProperties(props interface{}) error {
 	}
 
 	return util.MapToStruct(props, result)
+}
+
+func getMatchString(path string, iface string) string {
+	return "type='signal',interface='" + iface + "',path='" + path + "'"
+}
+
+//Register for signals
+func (c *Client) Register(path string, iface string) (chan *dbus.Signal, error) {
+
+	if !c.isConnected() {
+		err := c.Connect()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	matchstr := getMatchString(path, iface)
+	c.logger.Printf("Match on %s", matchstr)
+	c.conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, matchstr)
+
+	channel := make(chan *dbus.Signal, 100)
+	c.conn.Signal(channel)
+
+	return channel, nil
+}
+
+//Unregister for signals
+func (c *Client) Unregister(path string, iface string) error {
+	if !c.isConnected() {
+		err := c.Connect()
+		if err != nil {
+			return err
+		}
+	}
+	matchstr := getMatchString(path, iface)
+	c.logger.Printf("Match on %s", matchstr)
+	c.conn.BusObject().Call("org.freedesktop.DBus.RemoveMatch", 0, matchstr)
+	return nil
 }
